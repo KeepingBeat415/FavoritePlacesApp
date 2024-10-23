@@ -6,7 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:favorite_places_app/model/place.dart';
 
 class LocationInput extends StatefulWidget {
-  const LocationInput({super.key});
+  const LocationInput({super.key, required this.onSelectedLocation});
+
+  final void Function(PlaceLocation location) onSelectedLocation;
 
   @override
   State<LocationInput> createState() {
@@ -17,6 +19,17 @@ class LocationInput extends StatefulWidget {
 class _LocationInputState extends State<LocationInput> {
   PlaceLocation? _pickedLocation;
   bool _isGettingLocation = false;
+
+  String get locationImage {
+    if (_pickedLocation == null) {
+      return '';
+    }
+
+    final lat = _pickedLocation!.latitude;
+    final lng = _pickedLocation!.longitude;
+
+    return ' https://maps.googleapis.com/maps/api/staticmap?center=$lat,$lng=&zoom=16&size=600x300&maptype=roadmap&markers=color:red%7Clabel:A%7C$lat,$lng&key=YOUR_API_KEY';
+  }
 
   void _getCurrentLocation() async {
     Location location = Location();
@@ -66,6 +79,9 @@ class _LocationInputState extends State<LocationInput> {
           PlaceLocation(latitude: lat!, longitude: lng!, address: resData);
       _isGettingLocation = true;
     });
+
+    widget.onSelectedLocation(
+        _pickedLocation!); //passing child's value to parent's function
   }
 
   @override
@@ -77,6 +93,15 @@ class _LocationInputState extends State<LocationInput> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
     );
+
+    if (_pickedLocation != null) {
+      content = Image.network(
+        locationImage,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
 
     if (_isGettingLocation) {
       content = const CircularProgressIndicator();
