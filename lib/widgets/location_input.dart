@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 import 'package:favorite_places_app/model/place.dart';
+import 'package:favorite_places_app/screen/map.dart';
 
 class LocationInput extends StatefulWidget {
   const LocationInput({super.key, required this.onSelectedLocation});
@@ -29,6 +30,25 @@ class _LocationInputState extends State<LocationInput> {
     final lng = _pickedLocation!.longitude;
 
     return ' https://maps.googleapis.com/maps/api/staticmap?center=$lat,$lng=&zoom=16&size=600x300&maptype=roadmap&markers=color:red%7Clabel:A%7C$lat,$lng&key=YOUR_API_KEY';
+  }
+
+  Future<void> _savePlace(double lat, double lng) async {
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=YOUR_API_KEY');
+
+    final response = await http.get(url);
+    final resData = jsonDecode(response.body);
+
+    final address = resData['results'][0]['formatted_address'];
+
+    setState(() {
+      _pickedLocation =
+          PlaceLocation(latitude: lat, longitude: lng, address: resData);
+      _isGettingLocation = true;
+    });
+
+    widget.onSelectedLocation(
+        _pickedLocation!); //passing child's value to parent's function
   }
 
   void _getCurrentLocation() async {
@@ -66,22 +86,23 @@ class _LocationInputState extends State<LocationInput> {
       return;
     }
 
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=YOUR_API_KEY');
+    _savePlace(lat, lng);
+  }
 
-    final response = await http.get(url);
-    final resData = jsonDecode(response.body);
+  void _selectedOnMap() async {
+    final pickedLocation = await Navigator.of(context).push
+        // <LatLng>
+        (
+      MaterialPageRoute(
+        builder: (cxt) => const MapScreen(),
+      ),
+    );
 
-    final address = resData['results'][0]['formatted_address'];
+    if (pickedLocation == null) {
+      return;
+    }
 
-    setState(() {
-      _pickedLocation =
-          PlaceLocation(latitude: lat!, longitude: lng!, address: resData);
-      _isGettingLocation = true;
-    });
-
-    widget.onSelectedLocation(
-        _pickedLocation!); //passing child's value to parent's function
+    _savePlace(pickedLocation.latitude, pickedLocation.longitude);
   }
 
   @override
@@ -129,7 +150,7 @@ class _LocationInputState extends State<LocationInput> {
               label: const Text('Get Current Location'),
             ),
             TextButton.icon(
-              onPressed: () {},
+              onPressed: _selectedOnMap,
               icon: const Icon(Icons.map),
               label: const Text('Select on Map'),
             ),

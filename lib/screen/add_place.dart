@@ -23,6 +23,8 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
 
   void _savePlace() {
     final enteredTitle = _titleController.text;
+    _selectedLocation = const PlaceLocation(
+        latitude: 11.11, longitude: 32.45, address: 'Faker Address');
 
     if (enteredTitle.isEmpty ||
         _selectedImage == null ||
